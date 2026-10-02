@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Juegos peques">
+  <meta name="theme-color" content="#fff7e8">
+  <title>Juegos peques</title>
+  <link rel="icon" href="icono.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icono-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<!--CUERPO-->
+  <div id="deco" aria-hidden="true"></div>
+
+  <header class="barra">
+    <button class="btn-redondo" id="btn-atras" aria-label="Atrás" hidden>⬅️</button>
+    <span class="avatar-mini" id="avatar-mini" hidden></span>
+    <h1 id="titulo">Juegos peques</h1>
+    <span class="estrellas" id="estrellas" hidden>⭐ <b>0</b></span>
+  </header>
+
+  <!-- Inicio: quién juega -->
+  <main id="v-inicio" class="vista">
+    <p class="pregunta">¿Quién va a jugar?</p>
+    <div class="perfiles" id="perfiles"></div>
+    <button class="chip btn-video" id="btn-video">🎬 Ver el vídeo</button>
+  </main>
+
+  <!-- Crear o editar perfil -->
+  <main id="v-perfil" class="vista" hidden>
+    <form class="ficha-perfil" id="form-perfil" autocomplete="off">
+      <div class="avatar-grande" id="pf-avatar"></div>
+
+      <label class="campo" id="pf-campo-nombre">
+        <span>Nombre</span>
+        <input id="pf-nombre" maxlength="16" placeholder="Escribe el nombre" required>
+      </label>
+
+      <div class="campo">
+        <span>Edad</span>
+        <div class="chips" id="pf-edades"></div>
+      </div>
+
+      <div class="campo">
+        <span>Foto o dibujo</span>
+        <div class="chips" id="pf-emojis">
+          <label class="chip chip-foto">📷 Foto
+            <input type="file" id="pf-foto" accept="image/*" hidden>
+          </label>
+        </div>
+      </div>
+
+      <div class="campo">
+        <span>Tema</span>
+        <div class="temas" id="pf-temas"></div>
+      </div>
+
+      <div class="acciones">
+        <button type="submit" class="btn-principal" id="pf-guardar">¡A jugar!</button>
+        <button type="button" class="btn-texto" id="pf-borrar" hidden>Borrar perfil</button>
+      </div>
+      <div class="confirmar" id="pf-confirmar" hidden>
+        <p>¿Seguro que quieres borrar este perfil?</p>
+        <button type="button" class="btn-texto peligro" id="pf-borrar-si">Sí, borrar</button>
+        <button type="button" class="btn-texto" id="pf-borrar-no">No</button>
+      </div>
+    </form>
+  </main>
+
+  <!-- Menú de juegos -->
+  <main id="v-menu" class="vista" hidden>
+    <div class="juegos" id="juegos"></div>
+    <div class="nivel-caja" id="nivel-caja">
+      <p class="nivel-texto">Nivel de sonidos, sílabas y palabras</p>
+      <div class="chips" id="niveles"></div>
+    </div>
+  </main>
+
+  <!-- Trazar: elegir número o letra -->
+  <main id="v-elegir" class="vista" hidden>
+    <h2>Números</h2>
+    <div class="rejilla" id="rejilla-numeros"></div>
+    <h2>Letras</h2>
+    <div class="rejilla" id="rejilla-letras"></div>
+  </main>
+
+  <!-- Trazar -->
+  <main id="v-trazar" class="vista vista-trazar" hidden>
+    <div class="lienzo-caja"><canvas id="lienzo"></canvas></div>
+    <div class="controles">
+      <button class="btn-redondo" id="trazar-oir" aria-label="Escuchar">🔊</button>
+      <button class="btn-redondo" id="trazar-borrar" aria-label="Otra vez">↺</button>
+      <button class="btn-redondo" id="trazar-sig" aria-label="Siguiente">➡️</button>
+    </div>
+  </main>
+
+  <!-- Sonidos, sílabas, palabras -->
+  <main id="v-juego" class="vista" hidden>
+    <div class="modos" id="modos" hidden>
+      <button class="chip" data-modo="buscar">👂 Buscar</button>
+      <button class="chip" data-modo="escribir">✏️ Escribir</button>
+      <span class="separador"></span>
+      <button class="chip" id="btn-guia" hidden>Con guía</button>
+    </div>
+    <div class="escena" id="escena"></div>
+    <div class="opciones" id="opciones"></div>
+    <div class="controles">
+      <button class="btn-redondo" id="juego-oir" aria-label="Escuchar otra vez">🔊</button>
+      <button class="btn-redondo" id="juego-pista" aria-label="Pista" hidden>💡</button>
+    </div>
+  </main>
+
+  <div class="intro" id="intro" hidden>
+    <video id="intro-video" src="media/intro.mp4" poster="media/intro.jpg" controls playsinline preload="metadata"></video>
+    <button class="btn-saltar" id="intro-saltar">Saltar ⏭</button>
+  </div>
+
+  <div id="fiesta" aria-hidden="true"></div>
+<!--/CUERPO-->
+  <script src="audio/manifest.js"></script>
+  <script src="js/frases.js"></script>
+  <script src="js/contenido.js"></script>
+  <script src="js/temas.js"></script>
+  <script src="js/trazos.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
