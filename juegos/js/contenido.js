@@ -128,6 +128,34 @@
     // el acierto reutiliza trazar.fin: "¡La a!"
   };
 
+  // ---------- Días de la semana (con la rutina real de Leo) ----------
+  const DIAS = [
+    { id: 'lunes', nombre: 'Lunes', color: '#e53935', emoji: '⚽', que: 'Fútbol', cole: true },
+    { id: 'martes', nombre: 'Martes', color: '#fb8c00', emoji: '🩰', que: 'Baile de Lía', cole: true },
+    { id: 'miercoles', nombre: 'Miércoles', color: '#f9c80e', emoji: '⚽', que: 'Fútbol', cole: true },
+    { id: 'jueves', nombre: 'Jueves', color: '#43a047', emoji: '🏠', que: 'En casa', cole: true },
+    { id: 'viernes', nombre: 'Viernes', color: '#1e88e5', emoji: '🎪', que: 'Circo', cole: true },
+    { id: 'sabado', nombre: 'Sábado', color: '#8e24aa', emoji: '🎉', que: 'Fin de semana', cole: false },
+    { id: 'domingo', nombre: 'Domingo', color: '#f06292', emoji: '🛋️', que: 'Fin de semana', cole: false },
+  ];
+  const dias = {
+    nombre: (d) => '¡' + d.nombre + '!',
+    todos: '¡Lunes, martes, miércoles, jueves, viernes, sábado y domingo!',
+    hoyEs: 'Hoy es',
+    mananaEs: 'Mañana es',
+    tren: 'Pon los días en orden en el tren.',
+    falta: '¿Qué día falta?',
+    cole: '¿Hay cole o es fin de semana?',
+    hayCole: '¡Hay cole!',
+    finde: '¡Fin de semana!',
+    toca: [
+      { pregunta: '¿Qué día hay circo?', dias: [4] },
+      { pregunta: '¿Qué día va Lía a baile?', dias: [1] },
+      { pregunta: '¿Qué días hay fútbol? Toca los dos.', dias: [0, 2] },
+      { pregunta: '¿Qué día estamos tranquilos en casa?', dias: [3] },
+    ],
+  };
+
   // ---------- Comunes ----------
   const comun = {
     quien: '¿Quién va a jugar?',
@@ -159,6 +187,8 @@
     NUMEROS.slice(1, 6).forEach((n) => f.push(n));
     f.push(colores.intro);
     COLORES.forEach((c) => f.push(colores.pregunta(c.id), colores.acierto(c.id)));
+    f.push(...DIAS.map(dias.nombre), dias.todos, dias.hoyEs, dias.mananaEs, dias.tren, dias.falta,
+      dias.cole, dias.hayCole, dias.finde, ...dias.toca.map((t) => t.pregunta));
     f.push(letras.intro);
     LETRAS_PEQUES.forEach((c) => f.push(letras.pregunta(c)));
     return [...new Set(f)];
@@ -177,6 +207,7 @@
     FONEMA, NIVELES, PALABRAS_INICIO, sonidos,
     CONSONANTES, VOCALES, SILABAS, silabas,
     PALABRAS, palabras, comun, listaFrases,
+    DIAS, dias,
     EDAD_PEQUES, contar, COLORES, colores, LETRAS_PEQUES, letras,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = CONTENIDO;

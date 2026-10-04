@@ -292,17 +292,19 @@
     sonidos: { emoji: '👂', nombre: 'Sonidos' },
     silabas: { emoji: '🧩', nombre: 'Sílabas' },
     palabras: { emoji: '📖', nombre: 'Palabras' },
+    dias: { emoji: '🚂', nombre: 'Días de la semana' },
   };
   const esPeque = () => perfil.edad <= C.EDAD_PEQUES;
 
   function prepararMenu() {
-    const lista = esPeque() ? ['trazar', 'contar', 'colores', 'letras'] : ['trazar', 'sonidos', 'silabas', 'palabras'];
+    const lista = esPeque() ? ['trazar', 'contar', 'colores', 'letras'] : ['dias', 'trazar', 'sonidos', 'silabas', 'palabras'];
     const caja = $('#juegos');
     caja.classList.toggle('peques', esPeque());
     caja.innerHTML = '';
     lista.forEach((id, i) => {
       const b = document.createElement('button');
-      b.className = 'tarjeta t' + (i + 1) + (esPeque() && id === 'trazar' ? ' ancha' : '');
+      const ancha = esPeque() ? id === 'trazar' : id === 'dias';
+      b.className = 'tarjeta ' + (id === 'dias' ? 'tarjeta-dias' : 't' + (((i - (esPeque() ? 0 : 1)) % 4) + 1)) + (ancha ? ' ancha' : '');
       b.innerHTML = '<span class="emoji"></span><span></span>';
       b.firstChild.textContent = JUEGOS[id].emoji;
       b.lastChild.textContent = JUEGOS[id].nombre;
@@ -334,16 +336,21 @@
     }
     juego = id;
     ir('juego');
+    if (id === 'dias' && !dato('video-dias-visto', false)) {
+      guardarDato('video-dias-visto', true);
+      abrirIntro('media/dias.mp4'); // la primera vez, el vídeo de los días
+    }
     pintarModos();
     const r = ++ronda;
     limpiarTrazadores();
     $('#escena').innerHTML = '';
     $('#opciones').innerHTML = '';
-    await hablar(introJuego());
+    if (introJuego()) await hablar(introJuego());
     if (r === ronda) nuevaRonda();
   }
   function introJuego() {
     if (juego === 'silabas' && modoSilabas() === 'escribir') return C.silabas.introEscribir;
+    if (juego === 'dias') return null;
     return C[juego].intro;
   }
 
@@ -569,6 +576,8 @@
   const modoSilabas = () => dato('modo-silabas', 'buscar');
   const conGuia = () => dato('guia', true);
   function pintarModos() {
+    $('#modos-dias').hidden = juego !== 'dias';
+    document.querySelectorAll('[data-dias]').forEach((b) => b.classList.toggle('activo', b.dataset.dias === modoDias()));
     const enSilabas = juego === 'silabas';
     $('#modos').hidden = !enSilabas;
     const escribir = enSilabas && modoSilabas() === 'escribir';
@@ -641,7 +650,7 @@
     opciones.innerHTML = '';
     const ronda_ = { r, escena, opciones };
     ({ sonidos: rondaSonidos, silabas: modoSilabas() === 'escribir' ? rondaEscribir : rondaBuscar, palabras: rondaPalabras,
-      contar: rondaContar, colores: rondaColores, letras: rondaLetras })[juego](ronda_);
+      contar: rondaContar, colores: rondaColores, letras: rondaLetras, dias: rondaDias })[juego](ronda_);
     repetir();
   }
 
@@ -825,11 +834,177 @@
   }
 
   // =====================================================
+  // DÍAS DE LA SEMANA (con la rutina de Leo)
+  // =====================================================
+  const D = C.DIAS;
+  const nombreDia = (i) => C.dias.nombre(D[(i + 7) % 7]);
+  const modoDias = () => dato('modo-dias', 'hoy');
+  document.querySelectorAll('[data-dias]').forEach((b) =>
+    b.addEventListener('click', () => { guardarDato('modo-dias', b.dataset.dias); pintarModos(); nuevaRonda(); })
+  );
+  // Dice varias frases seguidas con una pausa; null = silencio (el hueco de "¿qué falta?")
+  async function decir(r, ...frases) {
+    for (const [i, f] of frases.entries()) {
+      if (r !== ronda) return;
+      if (i) await esperar(300);
+      if (f === null) await esperar(700);
+      else await hablar(f);
+    }
+  }
+  function vagon(i, { oir = false, clase = '' } = {}) {
+    const d = D[(i + 7) % 7];
+    const b = document.createElement('button');
+    b.className = 'vagon ' + clase;
+    b.style.setProperty('--c', d.color);
+    b.dataset.dia = (i + 7) % 7;
+    b.innerHTML = '<span class="ico"></span><span class="nom"></span><span class="ruedas"></span>';
+    b.querySelector('.ico').textContent = d.emoji;
+    b.querySelector('.nom').textContent = d.nombre;
+    if (oir) {
+      const o = document.createElement('span');
+      o.className = 'oir';
+      o.textContent = '🔊';
+      o.addEventListener('click', (ev) => { ev.stopPropagation(); hablar(C.dias.nombre(d)); });
+      b.appendChild(o);
+    }
+    return b;
+  }
+  const hueco = (texto = '') => {
+    const h = document.createElement('div');
+    h.className = 'vagon hueco-vagon';
+    h.textContent = texto;
+    return h;
+  };
+  const locomotora = () => {
+    const l = document.createElement('div');
+    l.className = 'locomotora';
+    l.textContent = '🚂';
+    return l;
+  };
+  const hoyIndice = () => (new Date().getDay() + 6) % 7; // lunes = 0
+
+  function rondaDias(args) {
+    ({ hoy: diasHoy, tren: diasTren, falta: diasFalta, cole: diasCole, toca: diasToca })[modoDias()](args);
+  }
+
+  // 📅 Hoy es… mañana es…
+  function diasHoy({ r, escena, opciones }) {
+    const h = hoyIndice();
+    escena.innerHTML = '<div class="hoy"><div class="hoy-col"><b>HOY</b></div><div class="hoy-col manana"><b>MAÑANA</b></div></div>';
+    const [colHoy, colMan] = escena.querySelectorAll('.hoy-col');
+    colHoy.appendChild(vagon(h, { clase: 'grande' }));
+    colMan.appendChild(vagon(h + 1));
+    const etiqueta = document.createElement('div');
+    etiqueta.className = 'etiqueta-cole';
+    etiqueta.textContent = D[h].cole ? '🏫 Hay cole' : '🎉 Fin de semana';
+    colHoy.appendChild(etiqueta);
+    const b = document.createElement('button');
+    b.className = 'btn-principal';
+    b.textContent = '🚂 ¡A jugar con el tren!';
+    b.addEventListener('click', () => { guardarDato('modo-dias', 'tren'); pintarModos(); nuevaRonda(); });
+    opciones.appendChild(b);
+    repetir = () => decir(r, C.dias.hoyEs, nombreDia(h), C.dias.mananaEs, nombreDia(h + 1));
+  }
+
+  // 🚂 Ordena los 7 vagones
+  function diasTren({ r, escena, opciones }) {
+    escena.innerHTML = '<div class="tren"></div>';
+    const tren = escena.firstChild;
+    tren.appendChild(locomotora());
+    const huecos = D.map(() => tren.appendChild(hueco()));
+    huecos[0].classList.add('siguiente');
+    let pos = 0;
+    barajar(D.map((_, i) => i)).forEach((i) => {
+      const v = vagon(i, { oir: true });
+      v.addEventListener('click', async () => {
+        if (pos >= 7) return;
+        if (i !== pos) return fallo(v);
+        v.classList.add('usada');
+        huecos[pos].replaceWith(vagon(i, { clase: 'puesto' }));
+        pos++;
+        if (huecos[pos]) huecos[pos].classList.add('siguiente');
+        pip(660);
+        await hablar(nombreDia(i));
+        if (pos === 7 && r === ronda) {
+          tren.classList.add('arranca');
+          acierto(r, C.dias.todos, bravo());
+        }
+      });
+      opciones.appendChild(v);
+    });
+    repetir = () => hablar(C.dias.tren);
+  }
+
+  // ❓ ¿Qué día falta? (la semana da la vuelta: después del domingo, lunes)
+  function diasFalta({ r, escena, opciones }) {
+    const inicio = sinRepetir([0, 1, 2, 3, 4, 5, 6]);
+    const k = azar([1, 1, 2]); // casi siempre falta el del medio
+    const meta = (inicio + k) % 7;
+    escena.innerHTML = '<div class="tren"></div>';
+    const tren = escena.firstChild;
+    tren.appendChild(locomotora());
+    const piezas = [0, 1, 2].map((j) => tren.appendChild(j === k ? hueco('?') : vagon(inicio + j, { clase: 'puesto' })));
+    conOtras(meta, D.map((_, i) => i)).forEach((i) => {
+      const v = vagon(i, { oir: true });
+      v.addEventListener('click', () => {
+        if (i !== meta) return fallo(v);
+        piezas[k].replaceWith(vagon(i, { clase: 'puesto' }));
+        v.classList.add('bien');
+        acierto(r, nombreDia(i), bravo());
+      });
+      opciones.appendChild(v);
+    });
+    repetir = () => decir(r, C.dias.falta, ...[0, 1, 2].map((j) => (j === k ? null : nombreDia(inicio + j))));
+  }
+
+  // 🏫 ¿Cole o fin de semana?
+  function diasCole({ r, escena, opciones }) {
+    const i = sinRepetir([0, 1, 2, 3, 4, 5, 6, 5, 6]); // salen más los del fin de semana
+    escena.appendChild(vagon(i, { oir: true, clase: 'grande' }));
+    [['cole', '🏫', 'Hay cole', true], ['finde', '🎉', 'Fin de semana', false]].forEach(([id, emoji, texto, esCole]) => {
+      const b = document.createElement('button');
+      b.className = 'tarjeta respuesta-cole ' + id;
+      b.innerHTML = '<span class="emoji"></span><span></span>';
+      b.firstChild.textContent = emoji;
+      b.lastChild.textContent = texto;
+      b.addEventListener('click', () => {
+        if (D[i].cole !== esCole) return fallo(b);
+        b.classList.add('bien');
+        acierto(r, D[i].cole ? C.dias.hayCole : C.dias.finde, bravo());
+      });
+      opciones.appendChild(b);
+    });
+    repetir = () => decir(r, nombreDia(i), C.dias.cole);
+  }
+
+  // ⚽ ¿Qué día toca…? (su rutina)
+  function diasToca({ r, escena, opciones }) {
+    const t = sinRepetir(C.dias.toca);
+    escena.innerHTML = '<div class="dibujo"></div>';
+    escena.firstChild.textContent = D[t.dias[0]].emoji;
+    const encontrados = new Set();
+    D.forEach((_, i) => {
+      const v = vagon(i, { oir: true });
+      v.addEventListener('click', () => {
+        if (encontrados.has(i)) return;
+        if (!t.dias.includes(i)) return fallo(v);
+        encontrados.add(i);
+        v.classList.add('bien');
+        if (encontrados.size === t.dias.length) acierto(r, ...t.dias.map(nombreDia), bravo());
+        else { pip(660); hablar(nombreDia(i)); }
+      });
+      opciones.appendChild(v);
+    });
+    repetir = () => hablar(t.pregunta);
+  }
+
+  // =====================================================
   // VÍDEO DE PRESENTACIÓN (se ve solo la primera vez; luego, con el botón)
   // =====================================================
   const intro = $('#intro');
   const video = $('#intro-video');
-  function abrirIntro() {
+  function abrirIntro(src = 'media/intro.mp4') {
+    if (!video.src.endsWith(src)) { video.src = src; video.poster = src.replace('.mp4', '.jpg'); }
     intro.hidden = false;
     video.currentTime = 0;
     video.play().catch(() => { /* sin toque previo: el niño pulsa ▶ */ });
@@ -839,7 +1014,8 @@
     intro.hidden = true;
     guardado.escribir('intro-vista', true);
   }
-  $('#btn-video').addEventListener('click', abrirIntro);
+  $('#btn-video').addEventListener('click', () => abrirIntro());
+  $('#btn-video-dias').addEventListener('click', () => { ronda++; abrirIntro('media/dias.mp4'); });
   $('#intro-saltar').addEventListener('click', cerrarIntro);
   video.addEventListener('ended', cerrarIntro);
 

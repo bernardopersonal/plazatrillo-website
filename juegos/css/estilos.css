@@ -216,3 +216,45 @@ h2 { margin: 4px 0 0; align-self: flex-start; font-size: 24px; }
   background: rgba(255, 255, 255, .92); color: #222; font-size: 20px; font-weight: 700;
   padding: 10px 20px; border-radius: 999px; box-shadow: 0 4px 0 rgba(0, 0, 0, .3);
 }
+
+/* ---------- Días de la semana ---------- */
+.tarjeta-dias { background: linear-gradient(90deg, #e53935, #fb8c00, #f9c80e, #43a047, #1e88e5, #8e24aa, #f06292); }
+.tren { display: flex; flex-wrap: wrap; gap: 8px 6px; justify-content: center; align-items: flex-end; max-width: 980px; }
+.tren.arranca { animation: arrancar 1.6s ease-in 1.2s; }
+@keyframes arrancar { 50% { transform: translateX(-12px); } 100% { transform: translateX(110vw); } }
+.locomotora { font-size: clamp(54px, 11vw, 84px); line-height: 1; transform: scaleX(-1); }
+.vagon {
+  position: relative; width: clamp(78px, 12vw, 116px); aspect-ratio: 1 / .95; padding: 6px 4px 14px;
+  border-radius: 14px; background: var(--c); color: #fff; box-shadow: var(--sombra);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  font-weight: 700; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); transition: transform .15s;
+}
+.vagon .ico { font-size: clamp(28px, 5vw, 42px); line-height: 1; text-shadow: none; }
+.vagon .nom { font-size: clamp(13px, 2.2vw, 18px); }
+.vagon .ruedas { position: absolute; bottom: -8px; left: 14%; right: 14%; height: 16px;
+  background: radial-gradient(circle at 8px 8px, #333 6px, #888 7px, transparent 8px) left / 16px 16px no-repeat,
+              radial-gradient(circle at 8px 8px, #333 6px, #888 7px, transparent 8px) right / 16px 16px no-repeat; }
+.vagon .oir { position: absolute; right: -8px; top: -8px; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--tarjeta); color: var(--tinta); font-size: 16px; box-shadow: var(--sombra); display: grid; place-items: center; text-shadow: none; }
+.vagon.grande { width: clamp(150px, 30vw, 220px); }
+.vagon.grande .ico { font-size: clamp(56px, 11vw, 84px); }
+.vagon.grande .nom { font-size: clamp(22px, 4vw, 32px); }
+.vagon.usada { visibility: hidden; }
+.vagon.bien { outline: 5px solid var(--ok); outline-offset: 3px; transform: translateY(-6px); }
+.vagon.mal { animation: temblar .4s; }
+.vagon.puesto { animation: encajar .3s ease-out; }
+@keyframes encajar { from { transform: translateY(-30px) scale(1.1); } }
+.hueco-vagon { background: transparent; border: 4px dashed color-mix(in srgb, var(--tinta) 30%, transparent); box-shadow: none;
+  color: var(--tinta); font-size: 40px; text-shadow: none; }
+.hueco-vagon.siguiente { border-color: var(--acento); animation: latir 1s ease-in-out infinite; }
+@keyframes latir { 50% { transform: scale(1.06); } }
+.hoy { display: flex; gap: 28px; align-items: flex-end; justify-content: center; flex-wrap: wrap; }
+.hoy-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.hoy-col b { font-size: 22px; letter-spacing: .08em; }
+.hoy-col.manana { opacity: .8; }
+.etiqueta-cole { font-size: 20px; font-weight: 700; background: var(--tarjeta); padding: 6px 14px; border-radius: 999px; box-shadow: var(--sombra); }
+.respuesta-cole { width: min(40vw, 220px); aspect-ratio: 1.3; }
+.respuesta-cole.cole { background: #1e88e5; } .respuesta-cole.finde { background: #8e24aa; }
+.respuesta-cole.bien { outline: 6px solid var(--ok); outline-offset: 4px; }
+:root.tema-bloques .vagon { border: 3px solid #1e1e1e; box-shadow: inset -5px -5px 0 rgba(0,0,0,.25), inset 5px 5px 0 rgba(255,255,255,.3), 0 6px 0 rgba(0,0,0,.35); }
+:root.tema-bloques .hueco-vagon { border-style: dashed; box-shadow: none; }
