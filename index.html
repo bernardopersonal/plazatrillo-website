@@ -8,7 +8,7 @@
   <title>Bernardo Plaza Trillo — Regulatory Affairs · PRRC · CISO</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..600&family=Newsreader:ital,opsz,wght@0,6..72,300..460;1,6..72,320..400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..600;1,8..60,300..500&family=Instrument+Sans:wght@400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -22,9 +22,9 @@
       --line-2:  rgba(28,26,22,0.09);
       --stamp:   #ab3b2c;
       --stamp-2: rgba(171,59,44,0.10);
-      --disp:    'Fraunces', Georgia, serif;
-      --text:    'Newsreader', Georgia, serif;
-      --mono:    'IBM Plex Mono', ui-monospace, monospace;
+      --disp:    'Source Serif 4', Georgia, serif;
+      --text:    'Instrument Sans', system-ui, sans-serif;
+      --mono:    'JetBrains Mono', ui-monospace, monospace;
     }
 
     html { scroll-behavior: smooth; background: var(--paper); }
@@ -32,8 +32,8 @@
       background: var(--paper);
       color: var(--ink);
       font-family: var(--text);
-      font-weight: 380;
-      font-size: 18px;
+      font-weight: 400;
+      font-size: 17px;
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
@@ -66,7 +66,7 @@
     }
     .lead strong, .body strong { font-weight: 560; color: var(--ink); }
     .body { color: var(--ink-2); }
-    .serif-it { font-family: var(--text); font-style: italic; }
+    .serif-it { font-family: var(--disp); font-style: italic; }
 
     a { color: inherit; }
 
@@ -146,7 +146,7 @@
     /* ════ NUMBERS ════ */
     .num-head { margin-bottom: 3.5rem; }
     .num-head .disp { font-size: clamp(2rem, 4.5vw, 3.2rem); }
-    .num-sub { font-family: var(--text); font-style: italic; color: var(--ink-3); font-size: 1.05rem; margin-top: 0.7rem; }
+    .num-sub { font-family: var(--disp); font-style: italic; color: var(--ink-3); font-size: 1.05rem; margin-top: 0.7rem; }
     .num-cols { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); }
     .num-col { padding: 2.4rem 2.2rem; }
     .num-col + .num-col { border-left: 1px solid var(--line); }
@@ -154,7 +154,7 @@
     .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem 1.4rem; }
     .stat .n { font-family: var(--disp); font-weight: 300; font-size: clamp(2.8rem, 5vw, 4rem); line-height: 0.95; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
     .stat .l { font-family: var(--mono); font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); line-height: 1.4; }
-    .stat .note { font-family: var(--text); font-style: italic; font-size: 0.82rem; color: var(--ink-3); margin-top: 0.25rem; }
+    .stat .note { font-family: var(--disp); font-style: italic; font-size: 0.82rem; color: var(--ink-3); margin-top: 0.25rem; }
     .markets { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
     .markets-l { font-family: var(--mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-3); margin-bottom: 0.9rem; }
 
@@ -172,6 +172,8 @@
     .tl-item:last-child .tl-line { display: none; }
     .tl-body { padding-left: 1.1rem; }
     .tl-co { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.03em; color: var(--ink-3); margin-bottom: 0.3rem; }
+    .tl-co a, .revs td a { text-decoration-color: var(--line); text-underline-offset: 3px; }
+    .tl-co a:hover, .revs td a:hover { color: var(--stamp); }
     .tl-role { font-family: var(--disp); font-weight: 420; font-size: 1.28rem; margin-bottom: 0.7rem; }
     .tl-desc { font-size: 1rem; color: var(--ink-2); max-width: 560px; margin-bottom: 0.9rem; line-height: 1.65; }
     .tl-foot { margin-top: 2.6rem; display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
@@ -515,7 +517,7 @@
             <div class="l">QMS implemented<br>(ISO 13485)</div>
           </div>
           <div class="stat">
-            <div class="n">7</div>
+            <div class="n">8</div>
             <div class="l">ISMS implemented<br>(ISO 27001)</div>
           </div>
           <div class="stat">
@@ -543,6 +545,24 @@
     </div>
     <div class="timeline">
       <div class="tl-item fu">
+        <div class="tl-date"><b>2025</b><br>Dec → Now</div>
+        <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-body">
+          <div class="tl-co"><a href="https://www.healthtechcommunity.eu" target="_blank" rel="noopener">HealthTech Community Valencia ↗</a></div>
+          <div class="tl-role">Co-founder</div>
+          <div class="tl-desc">
+            A non-profit connecting the healthtech ecosystem in Valencia. We run monthly
+            events, bring people together, and support the local talent and companies
+            building in the field.
+          </div>
+          <div class="tags">
+            <span class="tag">Non-profit</span><span class="tag">Community</span>
+            <span class="tag">Events</span><span class="tag">Healthtech</span>
+            <span class="tag">Valencia</span>
+          </div>
+        </div>
+      </div>
+      <div class="tl-item fu">
         <div class="tl-date"><b>2022</b><br>→ Now</div>
         <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
         <div class="tl-body">
@@ -558,24 +578,6 @@
             <span class="tag">MDR</span><span class="tag">ISO 13485</span>
             <span class="tag">ISO 27001</span><span class="tag">ISO 42001</span>
             <span class="tag">SaMD</span><span class="tag">AI</span>
-          </div>
-        </div>
-      </div>
-      <div class="tl-item fu">
-        <div class="tl-date"><b>2025</b><br>Dec → Now</div>
-        <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
-        <div class="tl-body">
-          <div class="tl-co">HealthTech Community Valencia</div>
-          <div class="tl-role">Co-founder</div>
-          <div class="tl-desc">
-            A non-profit connecting the healthtech ecosystem in Valencia. We run monthly
-            events, bring people together, and support the local talent and companies
-            building in the field.
-          </div>
-          <div class="tags">
-            <span class="tag">Non-profit</span><span class="tag">Community</span>
-            <span class="tag">Events</span><span class="tag">Healthtech</span>
-            <span class="tag">Valencia</span>
           </div>
         </div>
       </div>
@@ -753,7 +755,7 @@
             <tr><td>02</td><td>2014–22</td><td>5 CE marks and 5 FDA clearances obtained. Product registered in 11 countries.</td></tr>
             <tr><td>03</td><td>2019</td><td>Scope extended: joins Complear as Senior RA/QA consultant, focused on SaMD.</td></tr>
             <tr><td>04</td><td>2022</td><td>Startup closed. Lessons learned incorporated. Joins iDoctus as PRRC &amp; ISO.</td></tr>
-            <tr><td>05</td><td>2025-12</td><td>Co-founds HealthTech Community Valencia.</td></tr>
+            <tr><td>05</td><td>2025-12</td><td>Co-founds <a href="https://www.healthtechcommunity.eu" target="_blank" rel="noopener">HealthTech Community Valencia</a>.</td></tr>
             <tr class="cur"><td>06</td><td>2026-10</td><td>Website made less boring. Approved by: the author. Independent review: pending.</td></tr>
           </tbody>
         </table>
