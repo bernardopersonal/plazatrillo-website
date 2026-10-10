@@ -33,7 +33,8 @@
   const ORDEN_LETRAS = 'AEIOUMPLSTBCDFGHJKNÑQRVWXYZ'.split('');
 
   function nombreTrazo(c) {
-    return /\d/.test(c) ? 'el ' + NUMEROS[+c] : 'la ' + NOMBRE_LETRA[c];
+    // Mayúscula y minúscula se llaman igual: "la eme" (reutiliza el mismo audio)
+    return /\d/.test(c) ? 'el ' + NUMEROS[+c] : 'la ' + NOMBRE_LETRA[c.toUpperCase()];
   }
   const trazar = {
     intro: '¿Qué quieres trazar?',
@@ -124,7 +125,7 @@
   const LETRAS_PEQUES = ['A', 'E', 'I', 'O', 'U', 'M', 'P', 'L', 'S', 'T'];
   const letras = {
     intro: 'Escucha y busca la letra.',
-    pregunta: (c) => '¿Dónde está la ' + NOMBRE_LETRA[c] + '?',
+    pregunta: (c) => '¿Dónde está la ' + NOMBRE_LETRA[c.toUpperCase()] + '?',
     // el acierto reutiliza trazar.fin: "¡La a!"
   };
 

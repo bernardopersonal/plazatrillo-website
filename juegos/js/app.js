@@ -44,11 +44,60 @@
     const guardados = guardado.leer('perfiles', {});
     delete guardados[id];
     guardado.escribir('perfiles', guardados);
-    ['estrellas', 'trazados', 'nivel'].forEach((k) => guardado.borrar(k + '-' + id));
+    ['estrellas', 'trazados', 'nivel', 'letra'].forEach((k) => guardado.borrar(k + '-' + id));
     perfiles = cargarPerfiles();
   }
   const dato = (k, def) => guardado.leer(k + '-' + perfil.id, def);
   const guardarDato = (k, v) => guardado.escribir(k + '-' + perfil.id, v);
+
+  // ---------- Tipo de letra: ABC (mayúsculas) / abc (minúsculas) / Abc (mixto) ----------
+  // Se recuerda por niño. Los valores internos (respuestas, audios) no cambian: solo cómo se ven.
+  const MODOS_LETRA = { mayus: 'ABC', minus: 'abc', mixto: 'Abc' };
+  const SIGUIENTE_LETRA = { mayus: 'minus', minus: 'mixto', mixto: 'mayus' };
+  const NOMBRE_MODO_LETRA = { mayus: 'mayúsculas', minus: 'minúsculas', mixto: 'mayúscula y minúsculas' };
+  function modoLetra() {
+    const m = perfil ? dato('letra', 'mayus') : 'mayus';
+    return MODOS_LETRA[m] ? m : 'mayus';
+  }
+  // Cómo se escribe en pantalla un texto según el modo.
+  // Mixto: primera letra mayúscula y el resto minúscula (inicial: false → todo minúscula);
+  // una letra suelta se enseña en pareja: "M m", separadas por un espacio fino
+  // (juntas, "Ll" se lee como la elle de "Llama").
+  const ESPACIO_FINO = ' ';
+  function comoLetra(texto, { inicial = true } = {}) {
+    const t = String(texto);
+    const modo = modoLetra();
+    if (modo === 'mayus') return t.toUpperCase();
+    const min = t.toLowerCase();
+    if (modo === 'minus' || !inicial) return min;
+    if (min.length === 1 && min !== min.toUpperCase()) return min.toUpperCase() + ESPACIO_FINO + min;
+    return min.charAt(0).toUpperCase() + min.slice(1);
+  }
+  // ¿Hay trazos para este carácter? (las minúsculas se van añadiendo en js/trazos.js)
+  const tieneGlifo = (c) => { const g = window.Trazos.glifo(c); return !!(g && g.length); };
+  // Carácter que se traza según el modo: en minúsculas, la minúscula (si ya tiene trazos);
+  // en mayúsculas y en mixto (un carácter suelto), la mayúscula. Los números no cambian.
+  function casoTrazo(c) {
+    const min = c.toLowerCase();
+    return modoLetra() === 'minus' && tieneGlifo(min) ? min : c.toUpperCase();
+  }
+  // Pone un texto "para leer" en un elemento y lo apunta para repintarlo si cambia el tipo de letra.
+  // Solo toca el primer nodo de texto, así no se pierden los hijos (el 🔊 de las fichas).
+  function letrero(el, texto, { inicial = true } = {}) {
+    el.dataset.letra = texto;
+    if (!inicial) el.dataset.inicial = 'no';
+    pintarLetrero(el);
+    return el;
+  }
+  function pintarLetrero(el) {
+    const s = comoLetra(el.dataset.letra, { inicial: el.dataset.inicial !== 'no' });
+    const n = el.firstChild;
+    if (n && n.nodeType === Node.TEXT_NODE) n.nodeValue = s;
+    else el.insertBefore(document.createTextNode(s), n);
+    el.classList.toggle('pareja', el.dataset.letra.length === 1 && s.length > 1); // "M m"
+    el.classList.toggle('minus', s.length === 1 && s !== s.toUpperCase()); // una minúscula suelta: algo más grande
+    el.classList.toggle('caps', s.length > 1 && s === s.toUpperCase() && s !== s.toLowerCase()); // "MIÉRCOLES"
+  }
 
   function pintarAvatar(caja, p) {
     caja.innerHTML = '';
@@ -104,6 +153,8 @@
         : destino === 'perfil' ? (editando && editando.nombre ? editando.nombre : 'Nuevo jugador')
           : perfil.nombre;
     pintarEstrellas();
+    pintarBtnLetra();
+    if (destino === 'elegir') pintarRejillas(); // con el tipo de letra de ahora y las letras ya hechas
     window.scrollTo(0, 0);
     if (destino === 'trazar') ajustarLienzo();
   }
@@ -112,6 +163,34 @@
     limpiarTrazadores();
     ir(PADRE[vista]);
   });
+
+  // Botón ABC → abc → Abc (solo mientras juega un niño)
+  function pintarBtnLetra() {
+    const b = $('#btn-letra');
+    b.hidden = !perfil || !['menu', 'elegir', 'trazar', 'juego'].includes(vista);
+    if (b.hidden) return;
+    const m = modoLetra();
+    b.textContent = MODOS_LETRA[m];
+    // El nombre accesible empieza por lo que se ve (ABC / abc / Abc): así se encuentra también por voz
+    b.setAttribute('aria-label', MODOS_LETRA[m] + ': letra en ' + NOMBRE_MODO_LETRA[m] + '. Toca para cambiar.');
+  }
+  $('#btn-letra').addEventListener('click', () => {
+    if (!perfil) return;
+    guardarDato('letra', SIGUIENTE_LETRA[modoLetra()]);
+    pintarBtnLetra();
+    repintarLetras();
+  });
+  // Repinta la pantalla actual con el nuevo tipo de letra, sin empezar otra ronda.
+  function repintarLetras() {
+    if (vista === 'elegir') pintarRejillas();
+    else if (vista === 'trazar' && actual) {
+      const nuevo = casoTrazo(actual);
+      if (nuevo !== actual) { actual = nuevo; principal.cargar(nuevo); } // se llama igual: no hace falta volver a decirlo
+    } else if (vista === 'juego') {
+      if (juego === 'silabas' && modoSilabas() === 'escribir') rehacerEscritura();
+      else document.querySelectorAll('#v-juego [data-letra]').forEach(pintarLetrero);
+    }
+  }
 
   // ---------- Estrellas y fiesta ----------
   function pintarEstrellas() {
@@ -329,7 +408,6 @@
 
   async function abrirJuego(id) {
     if (id === 'trazar') {
-      pintarRejillas();
       ir('elegir');
       hablar(C.trazar.intro);
       return;
@@ -360,7 +438,19 @@
   // modo 'guia':     letra clarita; la bolita sale con la pista
   // modo 'oculto':   hoja en blanco; con la pista sale la letra y la bolita
   // =====================================================
+  // La letra se da por buena en cuanto se acaba su último trazo. Cada trazo se sigue en orden, y vale
+  // empezarlo en cualquiera de sus 5 primeros puntos (los peques no siempre aciertan con la bolita).
+  // Sin guía, la letra se coloca a lo ancho donde el niño empieza a escribirla.
   const ESPERA_PISTA = 5000; // ms sin avanzar antes de enseñar la pista
+  // Con pauta, la letra va de y=10 (b, d, l...) a y=94 (rabito de g, p, q...) y la guía tiene 15 de grueso:
+  // se dibuja todo al 90 % y centrado para que no se corte contra el borde del lienzo.
+  const MARGEN_PAUTA = { s: 0.9, dx: 5, dy: 3.2 };
+  // Mezcla dos colores #rrggbb (p = cuánto del segundo)
+  function mezclar(a, b, p) {
+    const rgb = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+    const A = rgb(a), B = rgb(b);
+    return '#' + A.map((v, i) => Math.round(v * (1 - p) + B[i] * p).toString(16).padStart(2, '0')).join('');
+  }
   let trazadores = [];
   function limpiarTrazadores() { trazadores.forEach((t) => t.destruir()); trazadores = []; }
 
@@ -371,19 +461,36 @@
       this.op = opciones;
       this.activo = true;
       this.T = null;
+      // Los dedos que tocan ahora el lienzo (pointerId → su tinta, último punto y recorrido): cada uno va por su
+      // cuenta, así la palma o un segundo dedo no cortan el trazo del que dibuja ni le pintan una raya hasta él
+      this.dedos = new Map();
       lienzo.addEventListener('pointerdown', (ev) => this.abajo(ev));
       lienzo.addEventListener('pointermove', (ev) => this.mover(ev));
-      ['pointerup', 'pointercancel'].forEach((e) => lienzo.addEventListener(e, () => { if (this.T) this.T.abajo = false; }));
+      ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((e) => lienzo.addEventListener(e, (ev) => this.arriba(ev)));
     }
-    get tol() { return { completo: 12, guia: 13, oculto: 16 }[this.op.modo || 'completo']; }
+    get modo() { return this.op.modo || 'completo'; }
+    // Tolerancia en unidades de la cuadrícula. Sin guía, las minúsculas (la mitad de altas) con menos:
+    // con 16 una raya hacía la 'e' o la 's'.
+    get tol() {
+      if (this.modo === 'oculto' && this.T && window.Trazos.esMinuscula(this.T.c)) return 11;
+      return { completo: 12, guia: 13, oculto: 16 }[this.modo];
+    }
     cargar(c) {
-      const trazos = window.Trazos.GLIFOS[c];
+      // pauta: true = siempre (Escribir); 'auto' = solo con las minúsculas (Trazar)
+      const pauta = this.op.pauta === 'auto' ? window.Trazos.esMinuscula(c) : !!this.op.pauta;
+      const trazos = window.Trazos.glifo(c, { pauta }) || window.Trazos.glifo(c.toUpperCase(), { pauta });
+      const guias = trazos.map((t) => window.Trazos.puntos(t));
+      const xs = guias.flat().map((q) => q[0]);
       this.T = {
-        c, i: 0, j: 0, tinta: [], abajo: false, fin: false,
-        guias: trazos.map((t) => window.Trazos.puntos(t)),
+        c, pauta, i: 0, j: 0, tinta: [], fin: false,
+        dx: 0, // sin guía: cuánto a la derecha (o izquierda) ha empezado el niño la letra
+        ult: null, // sin guía: dónde levantó el dedo tras un trazo de verdad (para seguir desde ahí)
+        xmin: Math.min(...xs), xmax: Math.max(...xs),
+        guias,
         ctrl: trazos.map((t) => window.Trazos.controles(t)),
       };
-      this.conPista = (this.op.modo || 'completo') === 'completo';
+      this.dedos.clear();
+      this.conPista = this.modo === 'completo';
       this.reloj();
       this.dibujar();
     }
@@ -406,32 +513,58 @@
       const ctx = this.ctx;
       ctx.beginPath();
       pts.slice(0, hasta).forEach(([x, y], n) => (n ? ctx.lineTo(x * k, y * k) : ctx.moveTo(x * k, y * k)));
+      if (Math.min(hasta, pts.length) === 1) ctx.lineTo(pts[0][0] * k + 0.01, pts[0][1] * k); // un punto (el de la i): que se vea
+    }
+    // Pauta de 4 líneas del cuaderno: arriba y abajo suaves, la de la x discontinua, la base más marcada
+    pintarPauta() {
+      const { asc, x, base, desc } = window.Trazos.LINEAS;
+      const ctx = this.ctx;
+      const k = this.cv.width / 100;
+      const linea = (y, alfa, grosor, discontinua) => {
+        ctx.globalAlpha = alfa;
+        ctx.lineWidth = grosor * k;
+        ctx.setLineDash(discontinua ? [2.5 * k, 2 * k] : []);
+        ctx.beginPath(); ctx.moveTo(4 * k, y * k); ctx.lineTo(96 * k, y * k); ctx.stroke();
+      };
+      ctx.save();
+      ctx.strokeStyle = temaActual.tinta;
+      ctx.lineCap = 'butt';
+      linea(asc, 0.16, 0.6);
+      linea(desc, 0.16, 0.6);
+      linea(x, 0.3, 0.7, true);
+      linea(base, this.modo === 'completo' ? 0.5 : 0.35, 1.1);
+      ctx.restore();
     }
     dibujar() {
       const T = this.T;
       const ctx = this.ctx;
       const k = this.cv.width / 100;
       const t = temaActual;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, this.cv.width, this.cv.height);
       if (!T) return;
+      if (T.pauta) ctx.setTransform(MARGEN_PAUTA.s, 0, 0, MARGEN_PAUTA.s, MARGEN_PAUTA.dx * k, MARGEN_PAUTA.dy * k);
       ctx.lineCap = ctx.lineJoin = 'round';
-      const modo = this.op.modo || 'completo';
+      const modo = this.modo;
 
-      if (this.op.renglones) {
-        ctx.strokeStyle = t.tinta; ctx.globalAlpha = 0.18; ctx.lineWidth = 0.8 * k;
-        [15, 85].forEach((y) => { ctx.beginPath(); ctx.moveTo(4 * k, y * k); ctx.lineTo(96 * k, y * k); ctx.stroke(); });
-        ctx.setLineDash([2 * k, 2 * k]);
-        ctx.beginPath(); ctx.moveTo(4 * k, 50 * k); ctx.lineTo(96 * k, 50 * k); ctx.stroke();
-        ctx.setLineDash([]); ctx.globalAlpha = 1;
-      }
+      if (T.pauta) this.pintarPauta();
 
+      // Sin guía, la letra (pista, avance y letra terminada) va donde la empezó el niño
+      ctx.save();
+      if (T.dx) ctx.translate(T.dx * k, 0);
       const verGuia = modo !== 'oculto' || this.conPista || T.fin;
       if (verGuia) {
+        // Con guía (Escribir): un tono más fuerte que el de Trazar y opaco, para que se vea por encima
+        // de la pauta y no salgan manchas donde se juntan los trazos. En Trazar, con pauta (minúsculas),
+        // algo más fuerte también: si no, la línea base destaca más que la letra (sobre todo en Espacio).
+        const colorGuia = modo === 'completo' ? (T.pauta ? mezclar(t.guia, t.tinta, 0.2) : t.guia) : mezclar(t.guia, t.tinta, 0.35);
+        // Las minúsculas son la mitad de altas: guía más fina para que no se cierren el ojo de la e o la s
+        const grosorGuia = window.Trazos.esMinuscula(T.c) ? 12 : 15;
         T.guias.forEach((g) => {
-          ctx.globalAlpha = modo === 'completo' ? 1 : 0.55;
-          this.camino(g); ctx.strokeStyle = t.guia; ctx.lineWidth = 15 * k; ctx.stroke();
-          ctx.globalAlpha = 1;
-          if (modo === 'completo' || this.conPista) {
+          this.camino(g); ctx.strokeStyle = colorGuia; ctx.lineWidth = grosorGuia * k; ctx.stroke();
+        });
+        T.guias.forEach((g) => {
+          if (modo !== 'oculto' || this.conPista) {
             this.camino(g); ctx.setLineDash([2 * k, 3 * k]); ctx.strokeStyle = t.tinta; ctx.globalAlpha = 0.3;
             ctx.lineWidth = 1.2 * k; ctx.stroke(); ctx.globalAlpha = 1; ctx.setLineDash([]);
           }
@@ -440,77 +573,151 @@
 
       T.ctrl.forEach((cp, n) => {
         const hasta = n < T.i ? cp.length : n === T.i ? T.j : 0;
-        if (hasta > 1) { this.camino(cp, hasta); ctx.strokeStyle = t.acento; ctx.lineWidth = 11 * k; ctx.stroke(); }
+        if (hasta > 1 || (hasta === 1 && cp.length === 1)) { this.camino(cp, hasta); ctx.strokeStyle = t.acento; ctx.lineWidth = 11 * k; ctx.stroke(); }
       });
+      ctx.restore();
 
+      // La tinta, donde ha pasado el dedo de verdad
       ctx.strokeStyle = t.c2; ctx.globalAlpha = 0.45; ctx.lineWidth = 4 * k;
       T.tinta.forEach((tr) => { this.camino(tr); ctx.stroke(); });
       ctx.globalAlpha = 1;
 
       if (T.fin || !this.activo || !this.conPista) return;
 
-      // Bolita que marca por dónde seguir, con flecha
+      // Bolita que marca por dónde seguir, con una flecha con palo: se lee bien en cualquier dirección
+      // (un triángulo solo, en diagonal, parece apuntar a otro lado)
       const cp = T.ctrl[T.i];
       const [x, y] = cp[Math.min(T.j, cp.length - 1)];
       const [nx, ny] = cp[Math.min(T.j + 3, cp.length - 1)];
+      ctx.save();
+      if (T.dx) ctx.translate(T.dx * k, 0);
       ctx.fillStyle = '#3fbf7f';
       ctx.beginPath(); ctx.arc(x * k, y * k, 6.5 * k, 0, Math.PI * 2); ctx.fill();
       if (nx !== x || ny !== y) {
-        ctx.save();
         ctx.translate(x * k, y * k); ctx.rotate(Math.atan2(ny - y, nx - x));
         ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.moveTo(4 * k, 0); ctx.lineTo(-2.5 * k, -3.2 * k); ctx.lineTo(-2.5 * k, 3.2 * k); ctx.closePath(); ctx.fill();
-        ctx.restore();
+        ctx.beginPath();
+        ctx.moveTo(4.8 * k, 0);
+        ctx.lineTo(0.6 * k, -3.6 * k); ctx.lineTo(0.6 * k, -1.3 * k); ctx.lineTo(-4 * k, -1.3 * k);
+        ctx.lineTo(-4 * k, 1.3 * k); ctx.lineTo(0.6 * k, 1.3 * k); ctx.lineTo(0.6 * k, 3.6 * k);
+        ctx.closePath(); ctx.fill();
       }
+      ctx.restore();
     }
     punto(ev) {
       const r = this.cv.getBoundingClientRect();
-      return [((ev.clientX - r.left) / r.width) * 100, ((ev.clientY - r.top) / r.height) * 100];
+      const p = [((ev.clientX - r.left) / r.width) * 100, ((ev.clientY - r.top) / r.height) * 100];
+      if (!this.T || !this.T.pauta) return p;
+      const { s, dx, dy } = MARGEN_PAUTA; // de la pantalla a la cuadrícula
+      return [(p[0] - dx) / s, (p[1] - dy) / s];
     }
+    // Sin guía no se ve dónde va la letra a lo ancho (la altura ya la marca la pauta):
+    // la letra se coloca donde el niño empieza el primer trazo, si empieza a la altura de la salida,
+    // en cualquier sitio del recuadro (sin que la letra se salga).
+    anclar(p) {
+      const T = this.T;
+      const c0 = T.ctrl[0][0];
+      if (Math.abs(p[1] - c0[1]) >= this.tol) return 0;
+      return Math.max(2 - T.xmin, Math.min(98 - T.xmax, p[0] - c0[0]));
+    }
+    // Sin guía, con el primer trazo a medias: ¿vuelve a poner el dedo donde lo levantó (o en la bolita de la
+    // pista), más cerca de ahí que de la salida? Entonces sigue la letra; si no, la empieza otra vez.
+    // T.ult solo lo deja un trazo de verdad (8 o más de recorrido): un toque suelto no se encadena con otro.
+    sigue(p) {
+      const T = this.T;
+      if (!T.j || !T.ult) return false;
+      const cp = T.ctrl[0];
+      const dist = (q, dx = 0) => Math.hypot(p[0] - dx - q[0], p[1] - q[1]);
+      let cerca = dist(T.ult);
+      if (this.conPista) cerca = Math.min(cerca, dist(cp[Math.min(T.j, cp.length - 1)], T.dx));
+      return cerca < this.tol && cerca < dist(cp[0], T.dx);
+    }
+    // ¿Hay otro dedo dibujando (no solo apoyado)?
+    dibujando() { return [...this.dedos.values()].some((d) => d.largo >= 8); }
     avanzar(p) {
       const T = this.T;
+      if (T.dx) p = [p[0] - T.dx, p[1]];
       const cp = T.ctrl[T.i];
       const antes = T.j;
+      // Sin guía, la letra empieza por la salida del primer trazo: un toque suelto en otro sitio no cuenta
+      if (this.modo === 'oculto' && T.i === 0 && T.j === 0 && Math.hypot(p[0] - cp[0][0], p[1] - cp[0][1]) >= this.tol) return;
+      // En orden, mirando los 5 puntos siguientes: así también vale empezar un poco por delante de la bolita
       for (let n = T.j; n < Math.min(T.j + 5, cp.length); n++) {
         if (Math.hypot(p[0] - cp[n][0], p[1] - cp[n][1]) < this.tol) T.j = n + 1;
       }
       if (T.j !== antes) this.reloj();
-      if (T.j >= cp.length) {
-        T.i++; T.j = 0; T.abajo = false;
-        if (T.i >= T.ctrl.length) {
-          T.fin = true; T.tinta = [];
-          clearTimeout(this._reloj);
-          if (this.op.alTerminar) this.op.alTerminar(T.c);
-        } else pip(660);
+      if (T.j < cp.length) return;
+      T.i++; T.j = 0;
+      if (T.i >= T.ctrl.length) {
+        T.fin = true; T.tinta = [];
+        clearTimeout(this._reloj);
+        this.dibujar();
+        if (this.op.alTerminar) this.op.alTerminar(T.c);
+        return;
       }
+      pip(660);
+      // La n, la m, la u... se pueden seguir sin levantar el dedo; los puntos de la i y la j, con un toque aparte
+      if (T.ctrl[T.i].length <= 2) this.dedos.clear();
     }
     abajo(ev) {
-      if (!this.T || this.T.fin || !this.activo) return;
-      this.cv.setPointerCapture(ev.pointerId);
-      this.T.abajo = true;
+      const T = this.T;
+      if (!T || T.fin || !this.activo) return;
+      try { this.cv.setPointerCapture(ev.pointerId); } catch (e) { /* ese dedo ya no está */ }
       const p = this.punto(ev);
-      this.T.tinta.push([p]);
+      // Sin guía, hasta acabar el primer trazo, poner el dedo empieza la letra otra vez, colocada donde lo pone
+      // (un toque perdido o un falso comienzo no estorban); salvo si sigue por donde iba o si otro dedo está
+      // dibujando (entonces este es la palma o un dedo de más: no borra nada)
+      if (this.modo === 'oculto' && T.i === 0 && !this.dibujando() && !this.sigue(p)) {
+        T.j = 0; T.dx = this.anclar(p); T.ult = null;
+      }
+      this.dedos.set(ev.pointerId, { k: T.tinta.push([p]) - 1, p, largo: 0 });
       this.avanzar(p);
       this.dibujar();
     }
     mover(ev) {
-      if (!this.T || !this.T.abajo || this.T.fin) return;
+      const T = this.T;
+      const d = this.dedos.get(ev.pointerId);
+      if (!T || T.fin || !d) return;
       const p = this.punto(ev);
-      this.T.tinta[this.T.tinta.length - 1].push(p);
+      d.largo += Math.hypot(p[0] - d.p[0], p[1] - d.p[1]);
+      d.p = p;
+      T.tinta[d.k].push(p);
       this.avanzar(p);
       this.dibujar();
+    }
+    arriba(ev) {
+      const d = this.dedos.get(ev.pointerId);
+      if (!d) return;
+      this.dedos.delete(ev.pointerId);
+      if (this.T && d.largo >= 8) this.T.ult = d.p; // por si vuelve a poner el dedo ahí (sigue())
     }
   }
 
   // =====================================================
   // TRAZAR (números y letras)
   // =====================================================
-  const SECUENCIA = [...'0123456789', ...C.ORDEN_LETRAS];
+  const DIGITOS = [...'0123456789'];
+  // Qué letras se ven según el modo: ABC → mayúsculas; abc → minúsculas; Abc → las dos.
+  // Las minúsculas van en el mismo orden (a e i o u m p l s...) y solo las que ya tienen trazos.
+  // (Si aún no hay ninguna minúscula, se enseñan las mayúsculas.)
+  function letrasTrazar() {
+    const modo = modoLetra();
+    const minus = C.ORDEN_LETRAS.map((c) => c.toLowerCase()).filter(tieneGlifo);
+    const verMinus = modo !== 'mayus' && minus.length > 0;
+    return { mayus: modo !== 'minus' || !verMinus ? C.ORDEN_LETRAS : [], minus: verMinus ? minus : [] };
+  }
+  // Orden del botón ➡️: el de lo que se ve en la rejilla
+  function secuenciaTrazar() {
+    const { mayus, minus } = letrasTrazar();
+    return [...DIGITOS, ...mayus, ...minus];
+  }
 
   function pintarRejillas() {
-    const hechos = new Set(dato('trazados', []));
-    const crear = (caja, lista) => {
+    const hechos = new Set(dato('trazados', [])); // por carácter: la 'm' y la 'M' son distintas
+    const crear = (caja, titulo, lista) => {
       caja.innerHTML = '';
+      caja.hidden = !lista.length;
+      if (titulo) titulo.hidden = !lista.length;
       lista.forEach((c) => {
         const b = document.createElement('button');
         b.textContent = c;
@@ -519,11 +726,13 @@
         caja.appendChild(b);
       });
     };
-    crear($('#rejilla-numeros'), [...'0123456789']);
-    crear($('#rejilla-letras'), C.ORDEN_LETRAS);
+    const { mayus, minus } = letrasTrazar();
+    crear($('#rejilla-numeros'), null, DIGITOS);
+    crear($('#rejilla-letras'), $('#titulo-mayus'), mayus);
+    crear($('#rejilla-minus'), $('#titulo-minus'), minus);
   }
 
-  const principal = new Trazador($('#lienzo'), { modo: 'completo', alTerminar: terminarTrazo });
+  const principal = new Trazador($('#lienzo'), { modo: 'completo', pauta: 'auto', alTerminar: terminarTrazo });
   let actual = null; // carácter que se está trazando
 
   function empezarTrazo(c) {
@@ -547,14 +756,19 @@
     fiesta();
     principal.dibujar();
     await hablar(C.trazar.fin(c));
-    if (actual === c && vista === 'trazar') { await esperar(250); hablar(bravo()); }
+    if (actual !== c || vista !== 'trazar') return;
+    await esperar(250);
+    if (actual === c && vista === 'trazar') hablar(bravo()); // puede haberse ido mientras tanto
   }
 
   $('#trazar-oir').addEventListener('click', () => actual && hablar(principal.T && principal.T.fin ? C.trazar.fin(actual) : C.trazar.empezar(actual)));
   $('#trazar-borrar').addEventListener('click', () => actual && empezarTrazo(actual));
   $('#trazar-sig').addEventListener('click', () => {
     if (!actual) return;
-    empezarTrazo(SECUENCIA[(SECUENCIA.indexOf(actual) + 1) % SECUENCIA.length]);
+    const sec = secuenciaTrazar();
+    let i = sec.indexOf(actual);
+    if (i < 0) i = sec.indexOf(casoTrazo(actual)); // por si se cambió el tipo de letra (P → p)
+    empezarTrazo(sec[(i + 1) % sec.length]);
   });
 
   // =====================================================
@@ -599,10 +813,11 @@
     nuevaRonda();
   });
 
-  function ficha(texto, alOir) {
+  // texto = valor interno (la respuesta se compara con él, no con lo que se ve)
+  function ficha(texto, alOir, { inicial = true } = {}) {
     const b = document.createElement('button');
     b.className = 'ficha';
-    b.textContent = String(texto).toUpperCase();
+    letrero(b, texto, { inicial });
     if (alOir) {
       const o = document.createElement('span');
       o.className = 'oir';
@@ -693,9 +908,13 @@
   }
 
   // ---------- Sílabas: escribir ----------
-  function rondaEscribir({ r, escena }) {
-    const meta = sinRepetir(silabasNivel());
-    const letras = meta.toUpperCase().split('');
+  // Cada letra en su recuadro con la pauta de 4 líneas: MA / ma / Ma según el tipo de letra.
+  // (Si alguna minúscula aún no tiene trazos, la sílaba entera va en mayúsculas.)
+  let escribiendo = null; // sílaba de la ronda (para repintarla si cambia el tipo de letra)
+  function rondaEscribir({ r, escena }, meta = sinRepetir(silabasNivel())) {
+    escribiendo = meta;
+    let letras = [...comoLetra(meta)];
+    if (!letras.every(tieneGlifo)) letras = [...meta.toUpperCase()];
     const modo = conGuia() ? 'guia' : 'oculto';
     escena.innerHTML = '<div class="cuaderno"></div>';
     const cuaderno = escena.firstChild;
@@ -706,7 +925,7 @@
       caja.appendChild(cv);
       cuaderno.appendChild(caja);
       const tz = new Trazador(cv, {
-        modo, renglones: true,
+        modo, pauta: true,
         alTerminar: async () => {
           pip(880);
           caja.classList.remove('activa');
@@ -721,7 +940,7 @@
             await hablar(C.FONEMA[L.toLowerCase()]);
             if (r !== ronda) return;
             await esperar(500);
-            acierto(r, meta, bravo());
+            if (r === ronda) acierto(r, meta, bravo());
           }
         },
       });
@@ -731,6 +950,16 @@
     });
     requestAnimationFrame(() => cajas.forEach((c) => { c.tz.ajustar(); c.tz.cargar(c.L); }));
     repetir = () => hablar(C.silabas.escribir(meta));
+  }
+  // La misma sílaba otra vez, con el nuevo tipo de letra (sin volver a decirla)
+  function rehacerEscritura() {
+    if (!escribiendo || !$('#escena .cuaderno')) return; // la ronda aún no ha empezado: ya saldrá con la letra nueva
+    if (trazadores.length && trazadores.every((t) => t.T && t.T.fin)) return; // ya está escrita: la siguiente saldrá con la letra nueva
+    const r = ++ronda;
+    limpiarTrazadores();
+    $('#escena').innerHTML = '';
+    $('#opciones').innerHTML = '';
+    rondaEscribir({ r, escena: $('#escena'), opciones: $('#opciones') }, escribiendo);
   }
 
   // ---------- Palabras ----------
@@ -743,14 +972,15 @@
     w.s.forEach(() => { const h = document.createElement('div'); h.className = 'hueco'; huecos.appendChild(h); });
     const extra = azar(C.SILABAS.filter((s) => !w.s.includes(s)));
     let pos = 0;
-    barajar([...w.s, extra]).forEach((s) => {
-      const b = ficha(s);
+    // En mixto solo la primera sílaba de la palabra lleva mayúscula: "Pa" + "to" (y la de despiste, en minúscula)
+    barajar([...w.s.map((s, i) => [s, i === 0]), [extra, false]]).forEach(([s, inicial]) => {
+      const b = ficha(s, null, { inicial });
       b.addEventListener('click', async () => {
         if (pos >= w.s.length) return;
         if (s !== w.s[pos]) return fallo(b);
         b.classList.add('usada');
         const h = huecos.children[pos];
-        h.textContent = s.toUpperCase();
+        letrero(h, s, { inicial: pos === 0 });
         h.classList.add('lleno');
         pos++;
         pip(660);
@@ -859,7 +1089,7 @@
     b.dataset.dia = (i + 7) % 7;
     b.innerHTML = '<span class="ico"></span><span class="nom"></span><span class="ruedas"></span>';
     b.querySelector('.ico').textContent = d.emoji;
-    b.querySelector('.nom').textContent = d.nombre;
+    letrero(b.querySelector('.nom'), d.nombre);
     if (oir) {
       const o = document.createElement('span');
       o.className = 'oir';
@@ -890,13 +1120,15 @@
   // 📅 Hoy es… mañana es…
   function diasHoy({ r, escena, opciones }) {
     const h = hoyIndice();
-    escena.innerHTML = '<div class="hoy"><div class="hoy-col"><b>HOY</b></div><div class="hoy-col manana"><b>MAÑANA</b></div></div>';
+    escena.innerHTML = '<div class="hoy"><div class="hoy-col"><b></b></div><div class="hoy-col manana"><b></b></div></div>';
     const [colHoy, colMan] = escena.querySelectorAll('.hoy-col');
+    letrero(colHoy.firstChild, 'hoy');
+    letrero(colMan.firstChild, 'mañana');
     colHoy.appendChild(vagon(h, { clase: 'grande' }));
     colMan.appendChild(vagon(h + 1));
     const etiqueta = document.createElement('div');
     etiqueta.className = 'etiqueta-cole';
-    etiqueta.textContent = D[h].cole ? '🏫 Hay cole' : '🎉 Fin de semana';
+    etiqueta.append(D[h].cole ? '🏫 ' : '🎉 ', letrero(document.createElement('span'), D[h].cole ? 'Hay cole' : 'Fin de semana'));
     colHoy.appendChild(etiqueta);
     const b = document.createElement('button');
     b.className = 'btn-principal';
@@ -966,7 +1198,7 @@
       b.className = 'tarjeta respuesta-cole ' + id;
       b.innerHTML = '<span class="emoji"></span><span></span>';
       b.firstChild.textContent = emoji;
-      b.lastChild.textContent = texto;
+      letrero(b.lastChild, texto);
       b.addEventListener('click', () => {
         if (D[i].cole !== esCole) return fallo(b);
         b.classList.add('bien');
@@ -1009,13 +1241,19 @@
     video.currentTime = 0;
     video.play().catch(() => { /* sin toque previo: el niño pulsa ▶ */ });
   }
+  // 🎬 en Días: mientras se ve el vídeo se cancela la ronda (que no hable encima); al cerrarlo, ronda nueva
+  let rondaTrasVideo = false;
   function cerrarIntro() {
     video.pause();
     intro.hidden = true;
     guardado.escribir('intro-vista', true);
+    if (rondaTrasVideo) {
+      rondaTrasVideo = false;
+      if (vista === 'juego' && juego === 'dias') nuevaRonda();
+    }
   }
   $('#btn-video').addEventListener('click', () => abrirIntro());
-  $('#btn-video-dias').addEventListener('click', () => { ronda++; abrirIntro('media/dias.mp4'); });
+  $('#btn-video-dias').addEventListener('click', () => { ronda++; rondaTrasVideo = true; abrirIntro('media/dias.mp4'); });
   $('#intro-saltar').addEventListener('click', cerrarIntro);
   video.addEventListener('ended', cerrarIntro);
 

@@ -46,9 +46,24 @@ button:focus-visible, input:focus-visible, .chip:focus-within { outline: 4px sol
   padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
 }
 .barra h1 { flex: 1; margin: 0; font-size: clamp(22px, 4vw, 32px); font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.estrellas { font-size: 24px; background: var(--tarjeta); border-radius: 999px; padding: 4px 14px; box-shadow: var(--sombra); font-variant-numeric: tabular-nums; }
+.estrellas { font-size: 24px; background: var(--tarjeta); border-radius: 999px; padding: 4px 14px; box-shadow: var(--sombra); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Interruptor de letra: ABC / abc / Abc */
+.btn-letra {
+  flex: none; height: 48px; min-width: 78px; padding: 0 12px; border-radius: 999px; /* mismo ancho con ABC, abc y Abc */
+  background: var(--tarjeta); box-shadow: var(--sombra); font-size: 24px; font-weight: 700; line-height: 1; transition: transform .1s;
+}
+@media (max-width: 480px) {
+  .barra { gap: 8px; }
+  .btn-letra { min-width: 64px; padding: 0 8px; font-size: 21px; }
+  :root.tema-bloques .btn-letra { min-width: 70px; } /* con el borde de 3 px */
+  .estrellas { padding: 4px 10px; font-size: 22px; }
+}
+@media (min-width: 481px) { :root.tema-bloques .btn-letra { min-width: 84px; } }
 .avatar-mini { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-size: 30px; background: var(--tarjeta); box-shadow: var(--sombra); flex: none; }
 .avatar-mini img, .avatar img, .avatar-grande img { width: 100%; height: 100%; object-fit: cover; }
+/* Móviles: sin el avatar pequeño (el nombre ya dice quién juega), para que quepa el nombre junto al ABC y las estrellas */
+@media (max-width: 430px) { .avatar-mini { display: none; } }
+@media (max-width: 370px) { .barra .btn-redondo { width: 52px; height: 52px; } }
 
 .vista { position: relative; z-index: 1; flex: 1; padding: 8px 16px calc(24px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .vista[hidden] { display: none; }
@@ -116,7 +131,7 @@ h2 { margin: 4px 0 0; align-self: flex-start; font-size: 24px; }
 .tarjeta .emoji { font-size: 1.9em; text-shadow: none; }
 .t1 { background: var(--c1); } .t2 { background: var(--c2); } .t3 { background: var(--c3); } .t4 { background: var(--c4); }
 .tarjeta.destacada { outline: 6px solid var(--tarjeta); outline-offset: -6px; }
-.tarjeta:active, .ficha:active, .btn-redondo:active, .perfil > button.entrar:active, .btn-principal:active { transform: translateY(4px) scale(.97); }
+.tarjeta:active, .ficha:active, .btn-redondo:active, .btn-letra:active, .perfil > button.entrar:active, .btn-principal:active { transform: translateY(4px) scale(.97); }
 .nivel-caja { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .nivel-texto { margin: 0; font-size: 18px; opacity: .8; text-align: center; }
 #niveles .chip { font-size: 18px; font-weight: 600; }
@@ -124,6 +139,10 @@ h2 { margin: 4px 0 0; align-self: flex-start; font-size: 24px; }
 /* Trazar */
 .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px; width: 100%; max-width: 980px; }
 .rejilla button { aspect-ratio: 1; border-radius: 18px; background: var(--tarjeta); box-shadow: var(--sombra); font-size: 34px; font-weight: 700; }
+.rejilla-minus button { font-size: 40px; }
+@media (min-width: 900px) { .rejilla { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); } } /* 27 letras: 14 + 13, sin una sola abajo */
+/* A E I O U / M P L S T... en filas de 5; minmax(0) y sin relleno: en 320 px las minúsculas (40 px) no ensanchan la columna */
+@media (max-width: 480px) { .rejilla { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; } .rejilla button { padding: 0; } }
 .rejilla button.hecho { background: color-mix(in srgb, var(--acento) 22%, var(--tarjeta)); }
 .btn-redondo { width: 64px; height: 64px; border-radius: 50%; background: var(--tarjeta); box-shadow: var(--sombra); font-size: 28px; flex: none; }
 .controles { display: flex; gap: 16px; }
@@ -140,6 +159,8 @@ h2 { margin: 4px 0 0; align-self: flex-start; font-size: 24px; }
 .opciones { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
 .ficha { position: relative; min-width: 110px; height: 110px; padding: 0 18px; border-radius: 26px; background: var(--tarjeta); box-shadow: var(--sombra); font-size: 56px; font-weight: 700; transition: transform .1s; }
 .ficha .oir { position: absolute; right: -10px; top: -10px; width: 42px; height: 42px; border-radius: 50%; background: var(--c3); color: #fff; font-size: 18px; box-shadow: var(--sombra); display: flex; align-items: center; justify-content: center; }
+.ficha.pareja { font-size: 52px; letter-spacing: .02em; } /* "Mm" */
+.ficha.minus { font-size: 72px; padding-bottom: 14px; } /* una minúscula suelta: igual de grande y centrada que una mayúscula */
 .ficha.bien { background: var(--ok); color: #fff; }
 .ficha.mal { animation: temblar .4s; }
 .ficha.usada { visibility: hidden; }
@@ -165,7 +186,7 @@ h2 { margin: 4px 0 0; align-self: flex-start; font-size: 24px; }
 .cuaderno { display: flex; gap: 10px; justify-content: center; width: 100%; }
 .cuaderno .lienzo-caja { width: min(46vw, 46vh, 340px); border: 4px solid transparent; transition: border-color .2s, opacity .2s; }
 .cuaderno .lienzo-caja.activa { border-color: var(--acento); }
-.cuaderno .lienzo-caja.espera canvas { opacity: .45; }
+.cuaderno .lienzo-caja.espera canvas { opacity: .6; }
 .cuaderno canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 
 /* Contar */
@@ -198,7 +219,7 @@ h2 { margin: 4px 0 0; align-self: flex-start; font-size: 24px; }
     linear-gradient(#6cc04a 0 10px, #4f9a32 10px 18px, #8a5a36 18px 40px, #75492b 40px);
 }
 :root.tema-bloques #deco span { opacity: .3; }
-:root.tema-bloques :is(.tarjeta, .btn-principal, .ficha, .rejilla button, .btn-redondo, .estrellas, .perfil > button.entrar, .cosa, .lienzo-caja, .ficha-perfil, .avatar-mini) {
+:root.tema-bloques :is(.tarjeta, .btn-principal, .ficha, .rejilla button, .btn-redondo, .btn-letra, .estrellas, .perfil > button.entrar, .cosa, .lienzo-caja, .ficha-perfil, .avatar-mini) {
   box-shadow: inset -6px -6px 0 rgba(0, 0, 0, .28), inset 6px 6px 0 rgba(255, 255, 255, .32), 0 6px 0 rgba(0, 0, 0, .35);
   border: 3px solid #1e1e1e;
 }
@@ -206,6 +227,12 @@ h2 { margin: 4px 0 0; align-self: flex-start; font-size: 24px; }
 :root.tema-bloques .chip.activo { background: var(--c1); color: #fff; }
 :root.tema-bloques .tarjeta { text-shadow: 3px 3px 0 rgba(0, 0, 0, .35); }
 :root.tema-bloques .color { border-color: #1e1e1e; }
+/* Los títulos de Trazar pueden caer sobre el suelo de tierra (fijo abajo): con fondo claro se leen */
+:root.tema-bloques .vista h2 { background: rgba(255, 255, 255, .8); padding: 0 8px; }
+/* Escribir: el borde de bloque es negro en los dos recuadros; el activo se marca por fuera */
+:root.tema-bloques .cuaderno .lienzo-caja.activa { outline: 4px solid var(--acento); outline-offset: 2px; }
+/* Las letras para leer, en letra redonda: en la pixelada la f es igual que la F y la j no tiene punto */
+:root.tema-bloques :is([data-letra], .rejilla button, .btn-letra) { font-family: 'Fredoka', 'Nunito', system-ui, sans-serif; }
 
 /* Vídeo de presentación */
 .btn-video { font-size: 18px; font-weight: 600; height: 52px; }
@@ -231,6 +258,7 @@ h2 { margin: 4px 0 0; align-self: flex-start; font-size: 24px; }
 }
 .vagon .ico { font-size: clamp(28px, 5vw, 42px); line-height: 1; text-shadow: none; }
 .vagon .nom { font-size: clamp(13px, 2.2vw, 18px); }
+.vagon .nom.caps { font-size: clamp(12px, 1.9vw, 18px); letter-spacing: -.02em; } /* "MIÉRCOLES" cabe en el vagón */
 .vagon .ruedas { position: absolute; bottom: -8px; left: 14%; right: 14%; height: 16px;
   background: radial-gradient(circle at 8px 8px, #333 6px, #888 7px, transparent 8px) left / 16px 16px no-repeat,
               radial-gradient(circle at 8px 8px, #333 6px, #888 7px, transparent 8px) right / 16px 16px no-repeat; }
@@ -239,6 +267,7 @@ h2 { margin: 4px 0 0; align-self: flex-start; font-size: 24px; }
 .vagon.grande { width: clamp(150px, 30vw, 220px); }
 .vagon.grande .ico { font-size: clamp(56px, 11vw, 84px); }
 .vagon.grande .nom { font-size: clamp(22px, 4vw, 32px); }
+.vagon.grande .nom.caps { font-size: clamp(19px, 3.4vw, 30px); letter-spacing: -.02em; }
 .vagon.usada { visibility: hidden; }
 .vagon.bien { outline: 5px solid var(--ok); outline-offset: 3px; transform: translateY(-6px); }
 .vagon.mal { animation: temblar .4s; }
